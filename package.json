@@ -1,0 +1,21 @@
+{
+  "name": "medivac",
+  "version": "1.2.0",
+  "description": "Drops a marine.",
+  "homepage": "http://cordova.apache.org",
+  "bugs": {
+    "url": "https://issues.apache.org/jira/browse/CB"
+  },
+  "license": "Apache-2.0",
+  "bin": {"drop": "./drop.js" },
+  "repository": {
+    "type": "git",
+    "url": "https://git-wip-us.apache.org/repos/asf/cordova-mobile-spec.git"
+  },
+  "dependencies": {
+    "commander": "^2.5.0",
+    "valid-identifier": "0.0.1",
+    "shelljs": "^0.3.0"
+  },
+  "private": true
+}
