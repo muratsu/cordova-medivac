@@ -21,6 +21,7 @@
    * Since this is being run in a browser and the results should populate to an HTML page, require the HTML-specific Jasmine code, injecting the same reference.
    */
   jasmineRequire.html(jasmine);
+  jasmineRequire.medic(jasmine);
 
   /**
    * Create the Jasmine environment. This is used to run all specs in a project.
@@ -131,10 +132,33 @@
   });
 
   /**
-   * The `jsApiReporter` also receives spec results, and is used by any environment that needs to extract the results  from JavaScript.
+   * The `ConsoleReporter` does what the HtmlReporter does, but prints its output to the console.
+   */
+  var consoleReporter = new jasmineRequire.ConsoleReporter({
+    showColors: true,
+    timer: new jasmine.Timer(),
+    print: function (message) {
+      console.log(message);
+    }
+  });
+
+  /**
+   * The `MedicReporter` posts the test results to CouchDB.
+   */
+  var medicReporter = new jasmineRequire.MedicReporter({
+    env: env,
+    log: {logurl: 'http://cdv-ms-buildbot.cloudapp.net:5984'},
+    sha: 'lol',
+    timer: new jasmine.Timer(),
+  });
+
+  /**
+   * The `jsApiReporter` also receives spec results, and is used by any environment that needs to extract the results from JavaScript.
    */
   env.addReporter(jasmineInterface.jsApiReporter);
   env.addReporter(htmlReporter);
+  env.addReporter(consoleReporter);
+  env.addReporter(medicReporter);
 
   /**
    * Filter which specs will be run by matching the start of the full name against the `spec` query param.
@@ -162,6 +186,7 @@
    */
   document.addEventListener('deviceready', function() {
     htmlReporter.initialize();
+    // medicReporter.initialize();
     env.execute();
   }, false);
 

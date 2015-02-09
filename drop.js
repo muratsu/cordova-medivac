@@ -137,7 +137,7 @@ function transformTest(code) {
 // steps
 function installPlugins(plugins, searchpath, argv) {
 
-    progress('Installing platforms');
+    progress('Installing plugins');
 
     // add plugins
     var command = ['plugin', 'add'].concat(plugins.join(' '));
@@ -331,6 +331,7 @@ function main() {
     shell.pushd(app_dir);
 
         installPlatforms(platforms, base_dir, program);
+        installPlugins(['org.apache.cordova.console', 'org.apache.cordova.device'], base_dir, program);
         installPlugins(plugins, base_dir, program);
         installTests(plugins, app_dir, program);
         adjustConfig(app_dir, program);
