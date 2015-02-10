@@ -15,7 +15,6 @@ var INDENT            = '    ';
 var ENCODING          = 'utf-8';
 var MEDIVAC_DIR_NAME  = 'cordova-medivac';
 var TEMPLATE_DIR_NAME = 'marine-template';
-var APP_NAME          = 'marine';
 var CLI_NAME          = 'cordova';
 var PLACEHOLDER       = '<!-- {{ SPECS }} -->';
 var ALL_PLUGINS       = [
@@ -60,6 +59,7 @@ program
 
     // arguments
     .option('-c, --couchdb [uri]', 'Use the passed CouchDB URI to record results (localhost by default).', 'localhost')
+    .option('-n, --name [name]',   'Use the passed name for the resulting app (marine by default)', 'marine')
 
     // flags
     .option('-v, --verbose', 'Be verbose.')
@@ -273,7 +273,7 @@ function main() {
     // get relevant paths
     var base_dir     = process.cwd();
     var template_dir = path.join(base_dir, MEDIVAC_DIR_NAME, TEMPLATE_DIR_NAME);
-    var app_dir      = path.join(base_dir, APP_NAME);
+    var app_dir      = path.join(base_dir, program.name);
     var local_cli    = path.join(base_dir, 'cordova-cli', 'bin', CLI_NAME);
 
     // use local cli if --global was not specified
@@ -330,7 +330,7 @@ function main() {
     }
 
     // create a new app
-    var command = ['create', app_dir, 'org.apache.cordova.' + APP_NAME, APP_NAME, '--copy-from=' + template_dir]
+    var command = ['create', app_dir, 'org.apache.cordova.' + program.name, program.name, '--copy-from=' + template_dir]
     cordovaRun(command);
 
     // do work inside the app directory
@@ -345,7 +345,7 @@ function main() {
 
     progress('Done');
 
-    console.log('To run the tests, run: cd ' + APP_NAME + ' && cordova run');
+    console.log('To run the tests, run: cd ' + program.name + ' && cordova run');
 }
 
 main();
