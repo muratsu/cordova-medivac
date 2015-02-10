@@ -179,6 +179,8 @@ function installTests(plugins, app_dir, argv) {
         console.log('app_spec_dir:    ' + app_spec_dir);
     }
 
+
+
     // copy the tests.js for each tested plugin into the app
     plugins.forEach(function (plugin) {
 
@@ -189,6 +191,10 @@ function installTests(plugins, app_dir, argv) {
 
             var src_file  = path.join(plugin_dir, 'tests', 'tests.js');
             var dest_file = path.join(app_spec_dir, plugin + '-tests.js')
+
+            if (!exists(app_spec_dir)) {
+                shell.mkdir('-p', app_spec_dir);
+            }
 
             // if the file exists, copy test file to spec dir
             if (exists(src_file)) {
