@@ -17,6 +17,10 @@ var MEDIVAC_DIR_NAME  = 'cordova-medivac';
 var TEMPLATE_DIR_NAME = 'app-template';
 var CLI_NAME          = 'cordova';
 var PLACEHOLDER       = '<!-- {{ SPECS }} -->';
+var DEFAULT_PLUGINS   = [
+    'org.apache.cordova.device',
+    'org.apache.cordova.console',
+];
 var ALL_PLUGINS       = [
     'org.apache.cordova.battery-status',
     'org.apache.cordova.camera',
@@ -337,6 +341,7 @@ function main() {
     shell.pushd(app_dir);
 
         installPlatforms(platforms, base_dir, program);
+        installPlugins(DEFAULT_PLUGINS, base_dir, program);
         installPlugins(plugins, base_dir, program);
         installTests(plugins, app_dir, program);
         adjustConfig(app_dir, program);
