@@ -131,10 +131,22 @@
   });
 
   /**
+   * The `ConsoleReporter` reports progress via console.log.
+   */
+  var consoleReporter = new jasmineRequire.ConsoleReporter()({
+    showColors: true,
+    timer: new jasmine.Timer,
+    print: function() {
+      console.log.apply(console, arguments)
+    }
+  });
+
+  /**
    * The `jsApiReporter` also receives spec results, and is used by any environment that needs to extract the results  from JavaScript.
    */
   env.addReporter(jasmineInterface.jsApiReporter);
   env.addReporter(htmlReporter);
+  env.addReporter(consoleReporter);
 
   /**
    * Filter which specs will be run by matching the start of the full name against the `spec` query param.
