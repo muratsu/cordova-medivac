@@ -783,6 +783,7 @@ getJasmineRequireObj().JsApiReporter = function() {
       return executionTime;
     };
 
+    return this;
   }
 
   return JsApiReporter;
@@ -810,7 +811,7 @@ getJasmineRequireObj().Any = function() {
     if (this.expectedObject == Object) {
       return typeof other == 'object';
     }
-    
+
     if (this.expectedObject == Boolean) {
       return typeof other == 'boolean';
     }

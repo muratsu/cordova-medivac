@@ -77,7 +77,7 @@
   /**
    * Add all of the Jasmine global/public interface to the proper global, so a project can use the public interface directly. For example, calling `describe` in specs instead of `jasmine.getEnv().describe`.
    */
-  if (typeof window == "undefined" && typeof exports == "object") {
+  if (typeof window == 'undefined' && typeof exports == 'object') {
     extend(exports, jasmineInterface);
   } else {
     extend(window, jasmineInterface);
@@ -114,8 +114,8 @@
     getWindowLocation: function() { return window.location; }
   });
 
-  var catchingExceptions = queryString.getParam("catch");
-  env.catchExceptions(typeof catchingExceptions === "undefined" ? true : catchingExceptions);
+  var catchingExceptions = queryString.getParam('catch');
+  env.catchExceptions(typeof catchingExceptions === 'undefined' ? true : catchingExceptions);
 
   /**
    * ## Reporters
@@ -123,7 +123,7 @@
    */
   var htmlReporter = new jasmine.HtmlReporter({
     env: env,
-    onRaiseExceptionsClick: function() { queryString.setParam("catch", !env.catchingExceptions()); },
+    onRaiseExceptionsClick: function() { queryString.setParam('catch', !env.catchingExceptions()); },
     getContainer: function() { return document.body; },
     createElement: function() { return document.createElement.apply(document, arguments); },
     createTextNode: function() { return document.createTextNode.apply(document, arguments); },
@@ -135,24 +135,32 @@
    */
   var consoleReporter = new jasmineRequire.ConsoleReporter()({
     showColors: true,
-    timer: new jasmine.Timer,
+    timer: new jasmine.Timer(),
     print: function() {
-      console.log.apply(console, arguments)
+      console.log.apply(console, arguments);
     }
   });
 
   /**
-   * The `jsApiReporter` also receives spec results, and is used by any environment that needs to extract the results  from JavaScript.
+   * The `JsApiReporter` just stores all results.
+   */
+  var medicReporter = new jasmine.JsApiReporter({
+    timer: new jasmine.Timer()
+  });
+
+  /**
+   * The `jsApiReporter` also receives spec results, and is used by any environment that needs to extract the results from JavaScript.
    */
   env.addReporter(jasmineInterface.jsApiReporter);
   env.addReporter(htmlReporter);
   env.addReporter(consoleReporter);
+  env.addReporter(medicReporter);
 
   /**
    * Filter which specs will be run by matching the start of the full name against the `spec` query param.
    */
   var specFilter = new jasmine.HtmlSpecFilter({
-    filterString: function() { return queryString.getParam("spec"); }
+    filterString: function() { return queryString.getParam('spec'); }
   });
 
   env.specFilter = function(spec) {
@@ -168,6 +176,51 @@
   window.clearInterval = window.clearInterval;
 
   /**
+   * Reporting function to couchdb. NOTE: the document ID will be generated on the server.
+   */
+  var reportResultsToCouchDB = function() {
+
+    // get Jasmine's JS API reporter
+    var apiReporter = jasmineInterface.jsApiReporter;
+
+    // package test results
+    var testResults = {};
+
+    testResults.timestamp     = new Date().getTime();
+    testResults.status        = apiReporter.status();
+    testResults.suites        = apiReporter.suites();
+    testResults.specs         = apiReporter.specs();
+    testResults.executionTime = apiReporter.executionTime();
+
+    // create request
+    var request = new XMLHttpRequest();
+    var uri     = 'http://cdv-ms-buildbot.cloudapp.net:5984/dblotsky_results/';
+
+    request.open('POST', uri, true); // NOTE: last argument is "async"
+    request.setRequestHeader('Content-type', 'application/json');
+    request.setRequestHeader('Connection', 'close');
+
+    request.onreadystatechange = function() {
+      if (request.readyState == 4) {
+        if (request.status >= 200 && request.status < 300) {
+          console.log('HTTP SUCCESS');
+          console.log(request.status);
+          console.log(request.responseText);
+        } else {
+          console.log('HTTP ERROR');
+          console.log(request.status);
+          console.log(request.statusText);
+          console.log(request.responseText);
+        }
+      }
+    }
+
+    // send request
+    console.log('sending results to ' + uri);
+    request.send(JSON.stringify(testResults));
+  }
+
+  /**
    * ## Execution
    *
    * Unlike standard Jasmine, do not fire on the browser window's `onload`. Instead, listen to Cordova's deviceready event, and then run all of the loaded specs. This includes initializing the `HtmlReporter` instance and then executing the loaded Jasmine environment. All of this will happen after all of the specs are loaded.
@@ -175,6 +228,7 @@
   document.addEventListener('deviceready', function() {
     htmlReporter.initialize();
     env.execute();
+    reportResultsToCouchDB();
   }, false);
 
   /**
