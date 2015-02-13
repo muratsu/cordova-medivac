@@ -193,10 +193,19 @@
     testResults.executionTime = apiReporter.executionTime();
 
     // create request
-    var request = new XMLHttpRequest();
-    var uri     = 'http://cdv-ms-buildbot.cloudapp.net:5984/dblotsky_results/';
+    var request       = new XMLHttpRequest();
+    var requestMethod = 'POST';
+    var requestURI    = 'http://' + TEST_CONFIG.couchdb_host + '/' + TEST_CONFIG.result_table_name + '/';
 
-    request.open('POST', uri, true); // NOTE: last argument is "async"
+    // if an identifier was provided for the results, do a PUT
+    // to a named document instead of a POST to an unnamed one
+    if (TEST_CONFIG.result_id !== null) {
+      requestMethod = 'PUT';
+      requestURI   += TEST_CONFIG.result_id;
+    }
+
+    // set up the request
+    request.open(requestMethod, requestURI, true); // NOTE: last argument is "async"
     request.setRequestHeader('Content-type', 'application/json');
     request.setRequestHeader('Connection', 'close');
 
@@ -215,8 +224,8 @@
       }
     }
 
-    // send request
-    console.log('sending results to ' + uri);
+    // send the request
+    console.log('sending ' + requestMethod + ' request to ' + requestURI);
     request.send(JSON.stringify(testResults));
   }
 

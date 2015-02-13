@@ -17,6 +17,8 @@ var MEDIVAC_DIR_NAME  = 'cordova-medivac';
 var TEMPLATE_DIR_NAME = 'app-template';
 var CLI_NAME          = 'cordova';
 var PLACEHOLDER       = '<!-- {{ SPECS }} -->';
+var CONFIG_VAR_NAME   = 'TEST_CONFIG';
+var RESULT_TABLE_NAME = 'dblotsky_results';
 var DEFAULT_PLUGINS   = [
     'org.apache.cordova.device',
     'org.apache.cordova.console',
@@ -62,8 +64,9 @@ program
     .option('-p, --wp8',          'Add Windows Phone 8 platform.')
 
     // arguments
-    .option('-c, --couchdb [uri]', 'Use the passed CouchDB URI to record results (localhost by default).', 'localhost')
-    .option('-n, --name [name]',   'Use the passed name for the resulting app (marine by default)', 'marine')
+    .option('-c, --couchdb [uri]',      'Use the passed CouchDB URI to record results (localhost by default).', 'localhost')
+    .option('-n, --name [name]',        'Use the passed name for the resulting app (marine by default)', 'marine')
+    .option('-r, --result-id [string]', 'Use the passed string to identify the results (used for CouchDB; null by default)', null)
 
     // flags
     .option('-v, --verbose', 'Be verbose.')
@@ -183,8 +186,6 @@ function installTests(plugins, app_dir, argv) {
         console.log('app_spec_dir:    ' + app_spec_dir);
     }
 
-
-
     // copy the tests.js for each tested plugin into the app
     plugins.forEach(function (plugin) {
 
@@ -244,18 +245,42 @@ function installTests(plugins, app_dir, argv) {
 
 function adjustConfig(app_dir, argv) {
 
-    progress('Modifying app\'s config.xml')
+    progress('Modifying app\'s config.xml');
 
-    var couch_host     = argv.couchdb;
-    var config_file    = path.join(app_dir, 'config.xml');
-    var config_content = fs.readFileSync(config_file, ENCODING);
+    var result_id    = argv.resultId;
+    var couchdb_host = argv.couchdb;
+    var config_xml   = path.join(app_dir, 'config.xml');
+    var config_js    = path.join(app_dir, 'www', 'js', 'test-config.js');
+
+    var xml_content = fs.readFileSync(config_xml, ENCODING);
+    var js_content  = fs.readFileSync(config_js, ENCODING);
 
     // add whitelisting rule allow access to couch server
-    console.log('Adding whitelist rule for CouchDB host: ' + couch_host);
-    config_content = config_content.split('</widget>').join('') + '    <access origin="' + couch_host + '" />\n</widget>';
+    console.log('Adding whitelist rule for CouchDB host: ' + couchdb_host);
+    xml_content = xml_content.split('</widget>').join('') + '    <access origin="' + couchdb_host + '" />\n</widget>';
 
-    // write the changed file
-    fs.writeFileSync(config_file, config_content, ENCODING);
+    // write the changed XML file
+    fs.writeFileSync(config_xml, xml_content, ENCODING);
+
+    progress('Modifying app\'s test-config.js');
+
+    // make an object of the relevant arguments
+    var app_config = {
+        'result_id':         result_id,
+        'couchdb_host':      couchdb_host,
+        'result_table_name': RESULT_TABLE_NAME,
+    };
+
+    // set the object as a constant
+    // TODO:
+    //      maybe instead mimic the previous medic.json file and HTTP GET it at run time?
+    js_content += 'var ' + CONFIG_VAR_NAME + ' = ' + JSON.stringify(app_config) + ';';
+
+    console.log('passing this config to the app:');
+    console.log(INDENT + JSON.stringify(app_config));
+
+    // write the changed JS file
+    fs.writeFileSync(config_js, js_content, ENCODING);
 }
 
 function main() {
