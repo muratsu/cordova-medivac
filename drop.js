@@ -19,11 +19,14 @@ var CLI_NAME          = 'cordova';
 var PLACEHOLDER       = '<!-- {{ SPECS }} -->';
 var CONFIG_VAR_NAME   = 'TEST_CONFIG';
 var RESULT_TABLE_NAME = 'dblotsky_results';
+var CRASH_TABLE_NAME  = 'dblotsky_crashes';
+
 var DEFAULT_PLUGINS   = [
     'org.apache.cordova.device',
     'org.apache.cordova.console',
 ];
-var ALL_PLUGINS       = [
+
+var CORE_PLUGINS = [
     'org.apache.cordova.battery-status',
     'org.apache.cordova.camera',
     'org.apache.cordova.console',
@@ -61,22 +64,23 @@ program
     .option('-b, --browser',      'Add browser platform.')
     .option('-w, --windows',      'Add Windows (universal) platform.')
     .option('-m, --windows8',     'Add Windows 8 (desktop) platform.')
-    .option('-p, --wp8',          'Add Windows Phone 8 platform.')
+    .option('-k, --wp8',          'Add Windows Phone 8 platform.')
 
     // arguments
-    .option('-c, --couchdb [uri]',      'Use the passed CouchDB URI to record results (localhost by default).', 'localhost')
-    .option('-n, --name [name]',        'Use the passed name for the resulting app (marine by default)', 'marine')
-    .option('-r, --result-id [string]', 'Use the passed string to identify the results (used for CouchDB; null by default)', null)
+    .option('-c, --couchdb-host [host]', 'Hostname of the CouchDB server to record results (localhost by default).', 'localhost')
+    .option('-p, --couchdb-port [port]', 'The port to the CouchDB host (5984 by default).', '5984')
+    .option('-n, --name [name]',         'The name for the test app (marine by default)', 'marine')
+    .option('-r, --result-id [string]',  'The string to identify the results (used for CouchDB; null by default)', null)
 
     // flags
     .option('-v, --verbose', 'Be verbose.')
-    .option('-a, --all',     'Include all org.apache.cordova plugins.\n' +
-                             '\t\t\tCannot be used while passing arguments on the command line.')
+    .option('-a, --core',    'Include all org.apache.cordova plugins.\n' +
+                             '\t\t\t\t\tCannot be used while passing arguments on the command line.')
     .option('-u, --plugman', 'Use {platform}/bin/create and plugman directly instead of the CLI.')
     .option('-g, --global',  'Use the globally-installed `cordova` and the downloaded platforms/plugins from the registry instead of the local git repo.\n' +
-                             '\t\t\tWill use the local git repo of mobile-spec.\n' +
-                             '\t\t\tGenerally used only to test RC or production releases.\n' +
-                             '\t\t\tCannot be used with --plugman.')
+                             '\t\t\t\t\tWill use the local git repo of medivac.\n' +
+                             '\t\t\t\t\tGenerally used only to test RC or production releases.\n' +
+                             '\t\t\t\t\tCannot be used with --plugman.')
     .parse(process.argv);
 
 // helpers
@@ -247,16 +251,21 @@ function adjustConfig(app_dir, argv) {
 
     progress('Modifying app\'s config.xml');
 
-    var result_id    = argv.resultId;
-    var couchdb_host = argv.couchdb;
-    var config_xml   = path.join(app_dir, 'config.xml');
-    var config_js    = path.join(app_dir, 'www', 'js', 'test-config.js');
+    // get CouchDB data
+    var couchdb_host = argv.couchdbHost;
+    var couchdb_port = argv.couchdbPort;
+    var couchdb_uri  = 'http://' + couchdb_host + ':' + couchdb_port;
 
+    // find config files
+    var config_xml = path.join(app_dir, 'config.xml');
+    var config_js  = path.join(app_dir, 'www', 'js', 'test-config.js');
+
+    // read them in
     var xml_content = fs.readFileSync(config_xml, ENCODING);
     var js_content  = fs.readFileSync(config_js, ENCODING);
 
-    // add whitelisting rule allow access to couch server
-    var whitelist_rule = 'http://' + couchdb_host + '*';
+    // add whitelist rule allow access to couch server
+    var whitelist_rule = couchdb_uri + '*';
 
     console.log('Adding whitelist rule: ' + whitelist_rule);
     xml_content = xml_content.split('</widget>').join('') + '    <access origin="' + whitelist_rule + '" />\n</widget>';
@@ -268,9 +277,10 @@ function adjustConfig(app_dir, argv) {
 
     // make an object of the relevant arguments
     var app_config = {
-        'result_id':         result_id,
-        'couchdb_host':      couchdb_host,
+        'result_id':         argv.resultId,
+        'couchdb_uri':       couchdb_uri,
         'result_table_name': RESULT_TABLE_NAME,
+        'crash_table_name':  CRASH_TABLE_NAME,
     };
 
     // set the object as a constant
@@ -289,7 +299,7 @@ function main() {
 
     // verify args
     if (program === true && program.args.length > 0) {
-        console.log('Cannot specify plugins and --all at the same time.');
+        console.log('Cannot specify plugins and --core at the same time.');
         shell.exit(1);
     }
 
@@ -343,8 +353,8 @@ function main() {
     }
 
     // get plugins
-    if (program.all === true) {
-        plugins = ALL_PLUGINS;
+    if (program.core === true) {
+        plugins = CORE_PLUGINS;
     } else {
         plugins = program.args;
     }
@@ -368,9 +378,12 @@ function main() {
     shell.pushd(app_dir);
 
         installPlatforms(platforms, base_dir, program);
+
         installPlugins(DEFAULT_PLUGINS, base_dir, program);
         installPlugins(plugins, base_dir, program);
+
         installTests(plugins, app_dir, program);
+
         adjustConfig(app_dir, program);
 
     silentPopd();

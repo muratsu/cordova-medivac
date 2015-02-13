@@ -722,8 +722,9 @@ getJasmineRequireObj().JsApiReporter = function() {
   };
 
   function JsApiReporter(options) {
-    var timer = options.timer || noopTimer,
-        status = "loaded";
+    var timer         = options.timer || noopTimer,
+        onJasmineDone = options.onJasmineDone || function(){},
+        status        = "loaded";
 
     this.started = false;
     this.finished = false;
@@ -740,6 +741,7 @@ getJasmineRequireObj().JsApiReporter = function() {
       this.finished = true;
       executionTime = timer.elapsed();
       status = 'done';
+      onJasmineDone(this);
     };
 
     this.status = function() {

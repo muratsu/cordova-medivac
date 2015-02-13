@@ -70,7 +70,8 @@
     },
 
     jsApiReporter: new jasmine.JsApiReporter({
-      timer: new jasmine.Timer()
+      timer: new jasmine.Timer(),
+      onJasmineDone: function (reporter) { reportResults(reporter); }
     })
   };
 
@@ -136,16 +137,7 @@
   var consoleReporter = new jasmineRequire.ConsoleReporter()({
     showColors: true,
     timer: new jasmine.Timer(),
-    print: function() {
-      console.log.apply(console, arguments);
-    }
-  });
-
-  /**
-   * The `JsApiReporter` just stores all results.
-   */
-  var medicReporter = new jasmine.JsApiReporter({
-    timer: new jasmine.Timer()
+    print: function() { console.log.apply(console, arguments); }
   });
 
   /**
@@ -154,7 +146,6 @@
   env.addReporter(jasmineInterface.jsApiReporter);
   env.addReporter(htmlReporter);
   env.addReporter(consoleReporter);
-  env.addReporter(medicReporter);
 
   /**
    * Filter which specs will be run by matching the start of the full name against the `spec` query param.
@@ -176,26 +167,39 @@
   window.clearInterval = window.clearInterval;
 
   /**
-   * Reporting function to couchdb. NOTE: the document ID will be generated on the server.
+   * Result-reporting functions.
    */
-  var reportResultsToCouchDB = function() {
+  var reportResults = function(reporter) {
 
-    // get Jasmine's JS API reporter
-    var apiReporter = jasmineInterface.jsApiReporter;
-
-    // package test results
     var testResults = {};
 
+    // package test results
     testResults.timestamp     = new Date().getTime();
-    testResults.status        = apiReporter.status();
-    testResults.suites        = apiReporter.suites();
-    testResults.specs         = apiReporter.specs();
-    testResults.executionTime = apiReporter.executionTime();
+    testResults.status        = reporter.status();
+    testResults.suites        = reporter.suites();
+    testResults.specs         = reporter.specs();
+    testResults.executionTime = reporter.executionTime();
+
+    reportToCouchDB(testResults, TEST_CONFIG.result_table_name);
+  }
+
+  var reportCrash = function(exception) {
+    reportToCouchDB(exception, TEST_CONFIG.crash_table_name);
+  }
+
+  /**
+   * Reporting function to CouchDB.
+   */
+  var reportToCouchDB = function(resultObject, table_name) {
+
+    if (!table_name) {
+      throw 'Invalid CouchDB table name passed.';
+    }
 
     // create request
     var request       = new XMLHttpRequest();
     var requestMethod = 'POST';
-    var requestURI    = 'http://' + TEST_CONFIG.couchdb_host + '/' + TEST_CONFIG.result_table_name + '/';
+    var requestURI    = TEST_CONFIG.couchdb_uri + '/' + table_name + '/';
 
     // if an identifier was provided for the results, do a PUT
     // to a named document instead of a POST to an unnamed one
@@ -208,25 +212,24 @@
     request.open(requestMethod, requestURI, true); // NOTE: last argument is "async"
     request.setRequestHeader('Content-type', 'application/json');
     request.setRequestHeader('Connection', 'close');
-
     request.onreadystatechange = function() {
       if (request.readyState == 4) {
         if (request.status >= 200 && request.status < 300) {
           console.log('HTTP SUCCESS');
-          console.log(request.status);
-          console.log(request.responseText);
+          console.log('status:       ' + request.status);
+          console.log('responseText: ' + request.responseText);
         } else {
-          console.log('HTTP ERROR');
-          console.log(request.status);
-          console.log(request.statusText);
-          console.log(request.responseText);
+          console.error('HTTP ERROR');
+          console.error('status:       ' + request.status);
+          console.error('statusText:   ' + request.statusText);
+          console.error('responseText: ' + request.responseText);
         }
       }
     }
 
     // send the request
     console.log('sending ' + requestMethod + ' request to ' + requestURI);
-    request.send(JSON.stringify(testResults));
+    request.send(JSON.stringify(resultObject));
   }
 
   /**
@@ -235,9 +238,21 @@
    * Unlike standard Jasmine, do not fire on the browser window's `onload`. Instead, listen to Cordova's deviceready event, and then run all of the loaded specs. This includes initializing the `HtmlReporter` instance and then executing the loaded Jasmine environment. All of this will happen after all of the specs are loaded.
    */
   document.addEventListener('deviceready', function() {
+
     htmlReporter.initialize();
+
+    // add a special error handler in case the test suite itself crashes
+    document.addEventListener('error', function(err) {
+      try {
+        reportCrash(err);
+      } catch (err) {
+        console.error('FATAL: Crashed while reporting a crash!');
+      }
+      return true;
+    });
+
     env.execute();
-    reportResultsToCouchDB();
+
   }, false);
 
   /**
