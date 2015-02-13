@@ -256,8 +256,10 @@ function adjustConfig(app_dir, argv) {
     var js_content  = fs.readFileSync(config_js, ENCODING);
 
     // add whitelisting rule allow access to couch server
-    console.log('Adding whitelist rule for CouchDB host: ' + couchdb_host);
-    xml_content = xml_content.split('</widget>').join('') + '    <access origin="' + couchdb_host + '" />\n</widget>';
+    var whitelist_rule = 'http://' + couchdb_host + '*';
+
+    console.log('Adding whitelist rule: ' + whitelist_rule);
+    xml_content = xml_content.split('</widget>').join('') + '    <access origin="' + whitelist_rule + '" />\n</widget>';
 
     // write the changed XML file
     fs.writeFileSync(config_xml, xml_content, ENCODING);
