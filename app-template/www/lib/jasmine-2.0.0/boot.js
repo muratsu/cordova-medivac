@@ -241,7 +241,8 @@
 
     htmlReporter.initialize();
 
-    // add a special error handler in case the test suite itself crashes
+    // WINDOWS ONLY:
+    //    add a special error handler in case an exception does not get caught
     document.addEventListener('error', function(err) {
       try {
         reportCrash(err);
