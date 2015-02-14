@@ -11,6 +11,11 @@
 (function() {
 
   /**
+   * Globals
+   */
+  var crashNumber = 0;
+
+  /**
    * ## Require &amp; Instantiate
    *
    * Require Jasmine's core files. Specifically, this requires and attaches all of Jasmine's code to the `jasmine` reference.
@@ -184,28 +189,37 @@
   }
 
   var reportCrash = function(exception) {
-    reportToCouchDB(exception, TEST_CONFIG.crash_table_name);
+
+    // suffix the result id with the crash number if an id was given
+    var idSuffix = '-crash-' + crashNumber;
+    crashNumber += 1;
+
+    reportToCouchDB(exception, TEST_CONFIG.crash_table_name, idSuffix);
   }
 
   /**
    * Reporting function to CouchDB.
    */
-  var reportToCouchDB = function(resultObject, table_name) {
+  var reportToCouchDB = function(resultObject, tableName, idSuffix) {
 
-    if (!table_name) {
+    if (!tableName) {
       throw 'Invalid CouchDB table name passed.';
     }
 
     // create request
     var request       = new XMLHttpRequest();
     var requestMethod = 'POST';
-    var requestURI    = TEST_CONFIG.couchdb_uri + '/' + table_name + '/';
+    var requestURI    = TEST_CONFIG.couchdb_uri + '/' + tableName + '/';
 
     // if an identifier was provided for the results, do a PUT
     // to a named document instead of a POST to an unnamed one
     if (TEST_CONFIG.result_id !== null) {
       requestMethod = 'PUT';
       requestURI   += TEST_CONFIG.result_id;
+
+      if (idSuffix) {
+        requestURI += idSuffix;
+      }
     }
 
     // set up the request
