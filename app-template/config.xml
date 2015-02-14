@@ -19,10 +19,12 @@
   under the License.
 -->
     <name>mobilespec</name>
-    <author>Apache Cordova</author>
+    <author>Edgar Allan Poe</author>
+
     <description>
         Cordova test suite.
     </description>
+
     <access origin="http://audio.ibeat.org" />
     <access origin="http://cordova-filetransfer.jitsu.com" />
     <access origin="http://whatheaders.com" />
@@ -34,6 +36,7 @@
     <access origin="https://www.google.co.uk" />
     <access origin="http://techslides.com" />
     <access origin="httpssss://example.com" />
+
     <platform name="blackberry10">
         <access origin="file:///" />
         <access origin="https://www.apache.org" />
@@ -41,6 +44,20 @@
         <access origin="http://foobar.apache.org" />
         <access origin="http://www.apache.org" />
     </platform>
+
+    <platform name="android">
+        <splash src="www/splashscreens/android-port-hdpi.png" density="port-hdpi"/>
+        <splash src="www/splashscreens/android-port-xhdpi.png" density="port-xhdpi"/>
+        <splash src="www/splashscreens/android-land-hdpi.png" density="land-hdpi"/>
+        <splash src="www/splashscreens/android-land-xhdpi.png" density="land-xhdpi"/>
+        <preference name="SplashScreen" value="screen" />
+        <preference name="SplashScreenDelay" value="1000" />
+
+        <!-- The spinner shows only when SplashScreen is disabled. -->
+        <preference name="LoadingPageDialog" value="Loading,Main Page" />
+        <preference name="LoadingPage" value="Loading,Sub Page" />
+    </platform>
+
     <preference name="iosPersistentFileLocation" value="Library" />
     <preference name="AndroidPersistentFileLocation" value="Internal" />
 </widget>

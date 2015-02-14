@@ -241,14 +241,16 @@
 
     htmlReporter.initialize();
 
-    // WINDOWS ONLY:
-    //    add a special error handler in case an exception does not get caught
-    document.addEventListener('error', function(err) {
+    // add a special error handler in case an exception does not get caught
+    window.addEventListener('error', function(err) {
       try {
         reportCrash(err);
       } catch (err) {
         console.error('FATAL: Crashed while reporting a crash!');
       }
+
+      // WINDOWS ONLY:
+      //    don't crash the app on unhandled errors
       return true;
     });
 
