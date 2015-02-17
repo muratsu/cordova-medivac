@@ -225,7 +225,6 @@
     // set up the request
     request.open(requestMethod, requestURI, true); // NOTE: last argument is "async"
     request.setRequestHeader('Content-type', 'application/json');
-    request.setRequestHeader('Connection', 'close');
     request.onreadystatechange = function() {
       if (request.readyState == 4) {
         if (request.status >= 200 && request.status < 300) {
