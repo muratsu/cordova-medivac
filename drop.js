@@ -148,7 +148,7 @@ function transformTest(code) {
 // steps
 function installPlugins(plugins, searchpath, argv) {
 
-    progress('Installing platforms');
+    progress('Installing plugins');
 
     // add plugins
     var command = ['plugin', 'add'].concat(plugins.join(' '));
@@ -162,7 +162,7 @@ function installPlugins(plugins, searchpath, argv) {
 
 function installPlatforms(platforms, base_dir, argv) {
 
-    progress('Installing plugins');
+    progress('Installing platforms');
 
     platforms.forEach(function (platform) {
 
